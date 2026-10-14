@@ -1,7 +1,10 @@
 Weather screens
 ===============
 
-Select `AppState::RTCTest` in `include/Config.h`. GPIO 6 (button to ground,
+Select `AppState::Main` in `include/Config.h` for the clock/weather interface
+with background light sensing. The GY-30 adjusts OLED contrast linearly from
+a minimum of 30 in darkness to 255 at 140 lux, without displaying a sensor screen.
+`AppState::RTCTest` keeps the same screens with fixed brightness. GPIO 6 (button to ground,
 internal pull-up) cycles Clock → Weather overview → Today → Tomorrow.
 The clock still performs its NTP startup sync once and then uses the DS3231.
 
@@ -41,3 +44,13 @@ No API key is required for the non-commercial API. See the
 
 Firmware build and host parsing/timing checks were run. OLED appearance, network
 access from ubcIoT, and button behavior still need verification on the ESP32.
+
+Main clock alarm
+----------------
+
+On the Main time screen, GPIO 16 opens/saves a 24-hour alarm editor. GPIO 1
+increments the underlined digit and GPIO 6 selects the next digit. Outside the
+editor, GPIO 6 resumes normal screen switching; GPIO 16 still pages weather.
+The alarm remains active on every screen and returns to the clock when ringing.
+Press GPIO 16 to silence it. Alarms are one-shot and stored in RAM, so resets
+clear them. Automatic brightness remains active during editing and ringing.

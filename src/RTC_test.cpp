@@ -9,6 +9,7 @@
 #include "Config.h"
 #include "WiFiSecrets.h"
 #include "RTC_test.h"
+#include "AutoBrightness.h"
 
 namespace {
 RTC_DS3231 rtc;
@@ -121,7 +122,7 @@ void beginRTCTest() {
     display.setTextColor(SSD1306_WHITE);
     display.ssd1306_command(SSD1306_DISPLAYON);
     display.ssd1306_command(SSD1306_SETCONTRAST);
-    display.ssd1306_command(Config::CLOCK_BRIGHTNESS);
+    display.ssd1306_command(currentOLEDBrightness());
   } else {
     Serial.println("Clock OLED unavailable; using Serial Monitor only");
   }
@@ -147,7 +148,7 @@ void setRTCDisplayVisible(bool visible) {
   if (!visible) return;
   if (displayReady) {
     display.ssd1306_command(SSD1306_SETCONTRAST);
-    display.ssd1306_command(Config::CLOCK_BRIGHTNESS);
+    display.ssd1306_command(currentOLEDBrightness());
   }
   if (phase == Phase::Connecting) showStatus("Connecting to Wi-Fi...");
   else if (phase == Phase::Syncing) showStatus("Wi-Fi connected.\nSyncing NTP...");

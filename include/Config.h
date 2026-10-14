@@ -4,6 +4,7 @@
 
 // Edit settings here, then rebuild and upload.
 enum class AppState {
+  Main,
   Off,
   OLEDTest,
   I2CScan,
@@ -25,7 +26,8 @@ enum class AppState {
 // RTCTest = clock, weather overview, today hourly, tomorrow hourly
 // BuzzerTest = passive buzzer tone for 500 ms, silent for 500 ms, repeating
 // AlarmSetTest = 16 edit/save/stop, 6 next digit, 1 increment digit
-constexpr AppState APP_STATE = AppState::AlarmSetTest;
+// Main = time first, weather screens, and background automatic brightness
+constexpr AppState APP_STATE = AppState::Main;
 
 namespace Config {
 // Repeating buzzer test; duration applies to each ON and OFF phase.
@@ -77,7 +79,8 @@ constexpr unsigned long SCAN_START_DELAY_MS = 1500;
 
 // Light sensor: keep UPDATE_MS >= 180 ms for its conversion time.
 constexpr unsigned long UPDATE_MS = 500;
-// Linear contrast: 0 lux -> 0 (dimmest), FULL_BRIGHTNESS_LUX -> 255.
+// Linear contrast, clamped to MIN_OLED_BRIGHTNESS so darkness stays readable.
+constexpr uint8_t MIN_OLED_BRIGHTNESS = 1;
 constexpr float FULL_BRIGHTNESS_LUX = 140.0f;
 
 // Mac address printing timer.

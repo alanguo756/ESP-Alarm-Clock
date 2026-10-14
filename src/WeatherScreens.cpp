@@ -11,6 +11,7 @@
 #include "WeatherCA.h"
 #include "WeatherParse.h"
 #include "WeatherScreens.h"
+#include "AutoBrightness.h"
 
 namespace {
 struct FetchResult { bool ok; WeatherData data; char error[64]; };
@@ -206,7 +207,7 @@ void selectWeatherScreen(int screen) {
   if (displayReady) {
     display.setTextSize(1); display.setTextWrap(false); display.setTextColor(SSD1306_WHITE);
     display.ssd1306_command(SSD1306_SETCONTRAST);
-    display.ssd1306_command(Config::CLOCK_BRIGHTNESS);
+    display.ssd1306_command(currentOLEDBrightness());
   }
 }
 

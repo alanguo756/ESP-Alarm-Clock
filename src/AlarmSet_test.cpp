@@ -6,6 +6,7 @@
 #include "RTC_test.h"
 #include "AlarmLogic.h"
 #include "AlarmSet_test.h"
+#include "AutoBrightness.h"
 
 namespace {
 struct Button {
@@ -76,26 +77,23 @@ void render() {
 }
 }
 
-void beginAlarmSetTest() {
+void beginAlarmController() {
   pinMode(Config::BUZZER_PIN, OUTPUT);
   digitalWrite(Config::BUZZER_PIN, LOW);
   confirm.begin(); next.begin(); increment.begin();
   initialized = displayReady = editing = armed = ringing = false;
   currentUtc = alarmUtc = 0;
   editor = AlarmDigits{};
-  beginRTCTest(); // Reuse startup NTP sync and DS3231 handoff.
+
 }
 
-void updateAlarmSetTest() {
+bool alarmOverlayActive() { return editing || ringing; }
+bool alarmIsRinging() { return ringing; }
+
+void updateAlarmController(bool clockVisible, bool savePressed, bool nextPressed, bool incrementPressed) {
   const unsigned long now = millis();
-  // Always debounce, including during startup, so held buttons do not repeat.
-  const bool savePressed = confirm.pressed(now);
-  const bool nextPressed = next.pressed(now);
-  const bool incrementPressed = increment.pressed(now);
-  updateRTCTest();
   if (!rtcStartupComplete()) return;
   if (!initialized) {
-    setRTCDisplayVisible(false);
     Wire.beginTransmission(Config::OLED_ADDRESS);
     displayReady = Wire.endTransmission() == 0 &&
         display.begin(SSD1306_SWITCHCAPVCC, Config::OLED_ADDRESS, true, false);
@@ -103,7 +101,7 @@ void updateAlarmSetTest() {
       display.setTextColor(SSD1306_WHITE);
       display.setTextWrap(false);
       display.ssd1306_command(SSD1306_SETCONTRAST);
-      display.ssd1306_command(Config::CLOCK_BRIGHTNESS);
+      display.ssd1306_command(currentOLEDBrightness());
     }
     initialized = true;
     lastReadMs = now - Config::ALARM_POLL_MS;
@@ -121,7 +119,7 @@ void updateAlarmSetTest() {
     Serial.println("Alarm ringing; press GPIO 16 to stop");
     dirty = true;
   }
-  if (savePressed) {
+  if (savePressed && (clockVisible || ringing || editing)) {
     if (ringing) {
       noTone(Config::BUZZER_PIN);
       digitalWrite(Config::BUZZER_PIN, LOW);
@@ -148,5 +146,20 @@ void updateAlarmSetTest() {
     if (nextPressed) { editor.next(); dirty = true; }
     if (incrementPressed) { editor.increment(); dirty = true; }
   }
-  if (dirty) render();
+  if (dirty && (clockVisible || editing || ringing)) render();
+}
+
+void beginAlarmSetTest() {
+  beginAlarmController();
+  beginRTCTest();
+}
+
+void updateAlarmSetTest() {
+  const unsigned long now = millis();
+  const bool savePressed = confirm.pressed(now);
+  const bool nextPressed = next.pressed(now);
+  const bool incrementPressed = increment.pressed(now);
+  updateRTCTest();
+  if (rtcStartupComplete()) setRTCDisplayVisible(false);
+  updateAlarmController(true, savePressed, nextPressed, incrementPressed);
 }

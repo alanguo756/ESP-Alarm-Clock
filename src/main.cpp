@@ -9,10 +9,14 @@
 #include "ClockScreens.h"
 #include "Buzzer_test.h"
 #include "AlarmSet_test.h"
+#include "MainState.h"
 
 void setup() {
   Serial.begin(Config::SERIAL_BAUD);
   switch (APP_STATE) {
+    case AppState::Main:
+      beginMainState();
+      break;
     case AppState::Off:
       setOLEDTestState(OLEDTestState::Off);
       break;
@@ -45,6 +49,9 @@ void setup() {
 
 void loop() {
   switch (APP_STATE) {
+    case AppState::Main:
+      updateMainState();
+      break;
     case AppState::Off:
       delay(Config::IDLE_DELAY_MS);
       break;

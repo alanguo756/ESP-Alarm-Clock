@@ -9,9 +9,10 @@ using namespace Config;
 
 namespace {
 uint8_t brightnessForLux(float lux) {
-  if (lux <= 0.0f) return 0;
+  if (lux <= 0.0f) return MIN_OLED_BRIGHTNESS;
   if (lux >= FULL_BRIGHTNESS_LUX) return 255;
-  return static_cast<uint8_t>(lux * 255.0f / FULL_BRIGHTNESS_LUX + 0.5f);
+  const uint8_t scaled = static_cast<uint8_t>(lux * 255.0f / FULL_BRIGHTNESS_LUX + 0.5f);
+  return scaled < MIN_OLED_BRIGHTNESS ? MIN_OLED_BRIGHTNESS : scaled;
 }
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
@@ -72,7 +73,7 @@ void beginGY30Test() {
     display.setTextWrap(false);
     display.ssd1306_command(SSD1306_DISPLAYON);
     // Stay dim until the first valid reading.
-    applyBrightness(0);
+    applyBrightness(MIN_OLED_BRIGHTNESS);
   } else {
     Serial.printf("OLED unavailable at 0x%02X; readings will use Serial only.\n", OLED_ADDRESS);
   }
