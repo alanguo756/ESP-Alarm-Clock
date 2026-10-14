@@ -126,3 +126,9 @@ void updateGY30Test() {
   if (raw == 0xFFFF) display.print(" MAX");
   display.display();
 }
+
+void refreshGY30Display() {
+  // The clock changes contrast, so force the next sensor update to reapply it.
+  appliedBrightness = -1;
+  lastUpdateMs = millis() - UPDATE_MS;
+}
