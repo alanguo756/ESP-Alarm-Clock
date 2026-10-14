@@ -14,12 +14,18 @@ bool lightTestStarted = false;
 int lastReading = HIGH;
 int stableReading = HIGH;
 unsigned long changedMs = 0;
+int lastPageReading = HIGH;
+int stablePageReading = HIGH;
+unsigned long pageChangedMs = 0;
 }
 
 void beginClockScreens() {
   pinMode(Config::BUTTON_PIN, INPUT_PULLUP);
   lastReading = stableReading = digitalRead(Config::BUTTON_PIN);
   changedMs = millis();
+  pinMode(Config::PAGE_BUTTON_PIN, INPUT_PULLUP);
+  lastPageReading = stablePageReading = digitalRead(Config::PAGE_BUTTON_PIN);
+  pageChangedMs = millis();
   screen = Screen::Clock;
   rtcTime = 0;
   lastClockRead = millis() - 1000;
@@ -50,6 +56,16 @@ void updateClockScreens() {
       }
       Serial.printf("Screen: %d (0 clock, 1 GY-30, 2 overview, 3 today, 4 tomorrow)\n", static_cast<int>(screen));
     }
+  }
+
+  const int pageReading = digitalRead(Config::PAGE_BUTTON_PIN);
+  if (pageReading != lastPageReading) {
+    lastPageReading = pageReading;
+    pageChangedMs = now;
+  }
+  if (pageReading != stablePageReading && now - pageChangedMs >= Config::DEBOUNCE_MS) {
+    stablePageReading = pageReading;
+    if (stablePageReading == LOW) nextWeatherPage();
   }
 
   // Finish NTP setup even when the sensor screen is selected.

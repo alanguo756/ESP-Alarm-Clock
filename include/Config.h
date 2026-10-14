@@ -41,6 +41,7 @@ constexpr unsigned long IDLE_DELAY_MS = 10;
 
 // OLED text/button test. Connect the button between BUTTON_PIN and GND.
 constexpr int BUTTON_PIN = 6;
+constexpr int PAGE_BUTTON_PIN = 16; // Button to GND; cycles pages within a screen.
 constexpr unsigned long DEBOUNCE_MS = 30;
 // RTCTest cycles between the clock and GY-30 with this same button.
 constexpr uint8_t CLOCK_BRIGHTNESS = 207;
@@ -90,11 +91,9 @@ constexpr float WEATHER_LONGITUDE = -123.1207f;
 constexpr const char* WEATHER_TIMEZONE_ENCODED = "Etc%2FGMT%2B7"; // fixed PDT
 constexpr unsigned long WEATHER_REFRESH_MS = 30UL * 60 * 1000;
 constexpr unsigned long WEATHER_RETRY_MS = 5UL * 60 * 1000;
-constexpr unsigned long WEATHER_PAGE_MS = 5000;
 constexpr unsigned long WEATHER_WIFI_TIMEOUT_MS = 30000;
 constexpr uint16_t WEATHER_HTTP_TIMEOUT_MS = 10000;
 constexpr uint32_t WEATHER_TASK_STACK = 16384;
-static_assert(WEATHER_PAGE_MS > 0, "Weather page duration must be positive");
 static_assert(WEATHER_LATITUDE >= -90 && WEATHER_LATITUDE <= 90,
               "Weather latitude must be between -90 and 90");
 static_assert(WEATHER_LONGITUDE >= -180 && WEATHER_LONGITUDE <= 180,

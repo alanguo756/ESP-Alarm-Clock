@@ -17,7 +17,9 @@ struct FetchResult { bool ok; WeatherData data; char error[64]; };
 QueueHandle_t resultQueue = nullptr;
 WeatherData forecast{};
 bool haveData = false, fetching = false, attempted = false, lastFetchOK = false;
-unsigned long lastAttempt = 0, receivedMs = 0, pageStartedMs = 0, lastRender = 0;
+unsigned long lastAttempt = 0, receivedMs = 0, lastRender = 0;
+unsigned currentPage = 0;
+unsigned pageCount = 1;
 uint32_t screenAnchor = 0;
 int selected = -1;
 char errorText[64] = "Waiting for clock sync";
@@ -116,34 +118,48 @@ void overview(int dayIndex) {
   char text[32];
   snprintf(text, sizeof(text), "%s %.0fC", weatherLabel(forecast.code), forecast.temperature);
   label(0, 0, text);
-  snprintf(text, sizeof(text), "%.0f/%.0fC", day.low, day.high);
+  snprintf(text, sizeof(text), "%.0f-%.0fC", day.low, day.high);
   label(max(0, 128 - int(strlen(text)) * 6), 0, text);
-  sunIcon(12, 12, true); sunIcon(108, 12, false);
-  formatTime(day.sunrise, text); label(0, 23, text);
-  formatTime(day.sunset, text); label(98, 23, text);
-  uint32_t times[10];
-  const size_t count = daylightTimes(day, times, 10);
-  if (!count) { label(32, 23, "No sun"); return; }
-  const size_t pages = (count + 2) / 3;
-  const size_t page = ((millis() - pageStartedMs) / Config::WEATHER_PAGE_MS) % pages;
-  snprintf(text, sizeof(text), "%u/%u", unsigned(page + 1), unsigned(pages));
-  label(54, 23, text);
-  // Bars share a zero-inclusive scale, so negative temperatures extend below zero.
-  const float low = fminf(0, floorf(day.low));
-  const float high = fmaxf(1, ceilf(day.high));
-  const int zeroY = 46 - lroundf((0 - low) / (high - low) * 7);
-  for (size_t col = 0; col < 3 && page * 3 + col < count; ++col) {
-    const int x = col * 43;
-    const uint32_t t = times[page * 3 + col];
-    formatTime(t, text); label(x, 32, text);
+  sunIcon(12, 11, true); sunIcon(108, 11, false);
+  formatTime(day.sunrise, text); label(0, 19, text);
+  formatTime(day.sunset, text); label(98, 19, text);
+  // Only sunrise and sunset have condition labels on this overview.
+  const uint32_t endpoints[] = {day.sunrise, day.sunset};
+  for (int i = 0; i < 2; ++i) {
     WeatherHour hour;
-    if (!weatherAt(forecast, t, hour)) { label(x, 48, "N/A"); continue; }
-    const int tempY = constrain(46 - int(lroundf((hour.temperature - low) / (high - low) * 7)), 39, 46);
-    display.drawFastHLine(x, zeroY, 34, SSD1306_WHITE);
-    display.fillRect(x + 10, min(zeroY, tempY), 12, max(1, abs(tempY - zeroY)), SSD1306_WHITE);
-    snprintf(text, sizeof(text), "%.0fC", hour.temperature); label(x, 48, text);
-    label(x, 56, weatherLabel(hour.code));
+    if (weatherAt(forecast, endpoints[i], hour)) {
+      snprintf(text, sizeof(text), "%s %.0fC", weatherLabel(hour.code), hour.temperature);
+    } else snprintf(text, sizeof(text), "N/A");
+    label(i == 0 ? 0 : 128 - int(strlen(text)) * 6, 28, text);
   }
+
+  // One bar per hour, midnight through 23:00. A shared zero baseline
+  // keeps negative temperatures meaningful instead of implying positive heat.
+  float low = fminf(0, floorf(day.low));
+  float high = fmaxf(1, ceilf(day.high));
+  WeatherHour hours[24];
+  bool available[24];
+  for (int i = 0; i < 24; ++i) {
+    available[i] = weatherAt(forecast, day.start + i * 3600, hours[i]);
+    if (available[i]) {
+      low = fminf(low, floorf(hours[i].temperature));
+      high = fmaxf(high, ceilf(hours[i].temperature));
+    }
+  }
+  const int graphTop = 38, graphBottom = 54;
+  const int zeroY = graphBottom - lroundf(-low / (high - low) * (graphBottom - graphTop));
+  display.drawFastHLine(4, zeroY, 120, SSD1306_WHITE);
+  for (int i = 0; i < 24; ++i) {
+    if (!available[i]) continue; // Missing forecasts are not zero temperatures.
+    const int tempY = constrain(graphBottom - int(lroundf(
+        (hours[i].temperature - low) / (high - low) * (graphBottom - graphTop))),
+        graphTop, graphBottom);
+    display.fillRect(4 + i * 5, min(zeroY, tempY), 4,
+                     max(1, abs(tempY - zeroY)), SSD1306_WHITE);
+  }
+  label(0, 56, "00"); label(30, 56, "06"); label(60, 56, "12");
+  label(90, 56, "18"); label(116, 56, "23");
+
 }
 
 void hourly(uint32_t now, int dayIndex, bool tomorrow) {
@@ -159,7 +175,9 @@ void hourly(uint32_t now, int dayIndex, bool tomorrow) {
   }
   const unsigned count = (end - start + 3599) / 3600;
   const unsigned pages = max(1U, (count + 3) / 4);
-  const unsigned page = ((millis() - pageStartedMs) / Config::WEATHER_PAGE_MS) % pages;
+  pageCount = pages;
+  currentPage %= pages;
+  const unsigned page = currentPage;
   snprintf(text, sizeof(text), "%s %u/%u %s", tomorrow ? "Tomorrow" : "Today", page + 1, pages, Config::RTC_TIMEZONE_LABEL);
   label(0, 0, text);
   for (unsigned row = 0; row < 4 && page * 4 + row < count; ++row) {
@@ -177,7 +195,8 @@ void hourly(uint32_t now, int dayIndex, bool tomorrow) {
 
 void selectWeatherScreen(int screen) {
   selected = screen;
-  pageStartedMs = millis(); screenAnchor = 0; lastRender = millis() - 1000;
+  currentPage = 0; pageCount = 1;
+  screenAnchor = 0; lastRender = millis() - 1000;
   if (screen < 0) return;
   if (!displayReady) {
     Wire.beginTransmission(Config::OLED_ADDRESS);
@@ -189,6 +208,12 @@ void selectWeatherScreen(int screen) {
     display.ssd1306_command(SSD1306_SETCONTRAST);
     display.ssd1306_command(Config::CLOCK_BRIGHTNESS);
   }
+}
+
+void nextWeatherPage() {
+  if (selected != 1 && selected != 2) return;
+  currentPage = (currentPage + 1) % pageCount;
+  lastRender = millis() - 1000;
 }
 
 void updateWeatherScreens(bool startupComplete, uint32_t rtcUtc) {
@@ -213,6 +238,7 @@ void updateWeatherScreens(bool startupComplete, uint32_t rtcUtc) {
   if (selected < 0 || !displayReady || millis() - lastRender < 250) return;
   lastRender = millis();
   display.clearDisplay();
+  pageCount = 1; // Loading, errors, and the overview have only one page.
   if (!haveData) {
     label(0, 0, "Vancouver weather");
     display.setTextWrap(true); display.setCursor(0, 18);

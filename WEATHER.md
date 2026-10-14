@@ -6,19 +6,20 @@ internal pull-up) cycles Clock → GY-30 → Weather overview → Today → Tomo
 The clock still performs its NTP startup sync once and then uses the DS3231.
 
 Weather is for Vancouver, in Celsius and fixed PDT (UTC−7). Coordinates,
-refresh/retry intervals, and page duration are in `include/Config.h`.
+refresh/retry intervals, and button pins are in `include/Config.h`.
 If changing the clock timezone, also update `WEATHER_TIMEZONE_ENCODED`.
 
 The overview shows current conditions at top left and today's low/high at top
-right. Sunrise and sunset icons sit above their exact times. Below are temperature
-bars with time, temperature, and weather labels for sunrise, sunrise +3 hours,
-and so on, ending at sunset. The final interval can be shorter than three hours.
-The shared bar scale includes zero, with negative temperatures below the baseline.
-Three entries fit per page; pages rotate automatically every five seconds.
+right. Sunrise and sunset icons sit above their exact times, with weather and
+temperature labels only at those two endpoints. Underneath, 24 temperature bars
+cover the full day from 00:00 through 23:00. The bars share a zero-inclusive scale;
+negative temperatures extend below the baseline. This overview no longer pages.
 
 Today starts at the minute when you open the screen and advances in one-hour
 steps until local midnight. Tomorrow covers 00:00 through 23:00. Four entries fit
-per page and auto-advance; the button always changes screens. Exact-minute
+per page. Press the GPIO 16 button (to GND, internal pull-up) to advance one page,
+wrapping to the first page after the last. Holding it does not repeat. GPIO 6
+changes screens and resets paging to page 1. Pages do not advance automatically. Exact-minute
 temperatures are interpolated from hourly forecasts; weather codes use the
 nearest hourly sample. These are forecasts, not exact observations at sunrise.
 
