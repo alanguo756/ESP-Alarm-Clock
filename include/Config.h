@@ -10,7 +10,8 @@ enum class AppState {
   GY30Test,
   WiFiMACTest,
   WiFiTest,
-  RTCTest
+  RTCTest,
+  BuzzerTest
 };
 
 // Choose one state here, then upload:
@@ -21,9 +22,15 @@ enum class AppState {
 // WiFiMACTest = print the Wi-Fi station MAC address
 // WiFiTest = connect using WiFiSecrets.h and print connection status/IP
 // RTCTest = clock, GY-30, weather overview, today hourly, tomorrow hourly
-constexpr AppState APP_STATE = AppState::RTCTest;
+// BuzzerTest = passive buzzer tone for 500 ms, silent for 500 ms, repeating
+constexpr AppState APP_STATE = AppState::BuzzerTest;
 
 namespace Config {
+// Repeating buzzer test; duration applies to each ON and OFF phase.
+constexpr int BUZZER_PIN = 46;
+constexpr unsigned int BUZZER_FREQUENCY_HZ = 2000; // Tune to the buzzer's rated frequency.
+constexpr unsigned long BUZZER_DURATION_MS = 500;
+
 // Shared wiring and I2C devices.
 constexpr int SDA_PIN = 13;
 constexpr int SCL_PIN = 14;
