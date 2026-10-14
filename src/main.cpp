@@ -8,6 +8,7 @@
 #include "RTC_test.h"
 #include "ClockScreens.h"
 #include "Buzzer_test.h"
+#include "AlarmSet_test.h"
 
 void setup() {
   Serial.begin(Config::SERIAL_BAUD);
@@ -35,6 +36,9 @@ void setup() {
       break;
     case AppState::BuzzerTest:
       beginBuzzerTest();
+      break;
+    case AppState::AlarmSetTest:
+      beginAlarmSetTest();
       break;
   }
 }
@@ -64,6 +68,9 @@ void loop() {
       break;
     case AppState::BuzzerTest:
       updateBuzzerTest();
+      break;
+    case AppState::AlarmSetTest:
+      updateAlarmSetTest();
       break;
   }
 }

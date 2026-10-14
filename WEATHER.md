@@ -2,7 +2,7 @@ Weather screens
 ===============
 
 Select `AppState::RTCTest` in `include/Config.h`. GPIO 6 (button to ground,
-internal pull-up) cycles Clock → GY-30 → Weather overview → Today → Tomorrow.
+internal pull-up) cycles Clock → Weather overview → Today → Tomorrow.
 The clock still performs its NTP startup sync once and then uses the DS3231.
 
 Weather is for Vancouver, in Celsius and fixed PDT (UTC−7). Coordinates,

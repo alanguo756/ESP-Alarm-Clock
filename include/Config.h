@@ -11,7 +11,8 @@ enum class AppState {
   WiFiMACTest,
   WiFiTest,
   RTCTest,
-  BuzzerTest
+  BuzzerTest,
+  AlarmSetTest
 };
 
 // Choose one state here, then upload:
@@ -21,9 +22,10 @@ enum class AppState {
 // GY30Test = show light sensor readings on the OLED
 // WiFiMACTest = print the Wi-Fi station MAC address
 // WiFiTest = connect using WiFiSecrets.h and print connection status/IP
-// RTCTest = clock, GY-30, weather overview, today hourly, tomorrow hourly
+// RTCTest = clock, weather overview, today hourly, tomorrow hourly
 // BuzzerTest = passive buzzer tone for 500 ms, silent for 500 ms, repeating
-constexpr AppState APP_STATE = AppState::BuzzerTest;
+// AlarmSetTest = 16 edit/save/stop, 6 next digit, 1 increment digit
+constexpr AppState APP_STATE = AppState::AlarmSetTest;
 
 namespace Config {
 // Repeating buzzer test; duration applies to each ON and OFF phase.
@@ -49,8 +51,10 @@ constexpr unsigned long IDLE_DELAY_MS = 10;
 // OLED text/button test. Connect the button between BUTTON_PIN and GND.
 constexpr int BUTTON_PIN = 6;
 constexpr int PAGE_BUTTON_PIN = 16; // Button to GND; cycles pages within a screen.
+constexpr int ALARM_INCREMENT_PIN = 1; // Button to GND, internal pull-up.
+constexpr unsigned long ALARM_POLL_MS = 200;
 constexpr unsigned long DEBOUNCE_MS = 30;
-// RTCTest cycles between the clock and GY-30 with this same button.
+// RTCTest cycles between the clock and weather screens with this button.
 constexpr uint8_t CLOCK_BRIGHTNESS = 207;
 constexpr uint8_t MAX_TEXT_SIZE = 2;
 // Edit these strings to change the text on each screen.
